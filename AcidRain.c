@@ -1,16 +1,27 @@
 /*
-*			
+*
 *		ver 0.1
-*		yeonjeong choi 
+*		yeonjeong choi
 */
 #include <stdio.h>
 #include <conio.h>
 #include <Windows.h>
+#include <time.h>
+
+#define MAX_RAIN 100
+
+#define SPEED 5
+
 #define UP 72
 #define DOWN 80
 #define ENTER 13	
 
-int y = 10;  
+struct {
+	int x, y;
+	BOOL exist;
+}RAIN[MAX_RAIN] = {0,};
+
+int y = 10;
 // 화살표의 위치 저장 
 int menu = 0;
 
@@ -19,6 +30,7 @@ void DrawBoard();
 void DrawMenu();
 void MoveArrow(int key);
 BOOL IsMenuSel();
+BOOL IsKeyDown(int key);
 
 void gotoxy(int x, int y)
 {
@@ -28,7 +40,12 @@ void gotoxy(int x, int y)
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), Cur);
 }
 
-void DrawMenu() 
+BOOL IsKeyDown(int Key)
+{
+	return ((GetAsyncKeyState(Key) & 0x8000) != 0);
+}
+
+void DrawMenu()
 {
 	gotoxy(15, 4);
 	printf("    _    ____ ___ ____    ____     _    ___ _   _ ");
@@ -50,7 +67,7 @@ void DrawMenu()
 	printf("	[게임 종료]");
 }
 
-void MoveArrow(int key) 
+void MoveArrow(int key)
 {
 	switch (key)
 	{
@@ -61,12 +78,12 @@ void MoveArrow(int key)
 			printf(" ");
 			y -= 2;
 			gotoxy(27, y);
-			printf("▶"); 
+			printf("▶");
 		}
 		break;
 
 	case DOWN:
-		if (y < 16)	
+		if (y < 16)
 		{
 			gotoxy(27, y);
 			printf(" ");
@@ -79,7 +96,7 @@ void MoveArrow(int key)
 	case ENTER:
 		if (y == 10)
 		{
-			system("cls");  
+			system("cls");
 			DrawBoard();
 			IsMenuSel();
 		}
@@ -92,6 +109,7 @@ BOOL IsMenuSel()
 	return menu = 1;
 }
 
+// 게임 판
 void DrawBoard()
 {
 	int i;
@@ -113,9 +131,14 @@ void DrawBoard()
 
 int main()
 {
-	int key;	
+
+	srand((int)time(NULL));
+	int key;
 	int score = 0;
 	int life = 3;
+	int px = 10;
+	int count = 0;
+	int i = 0;
 
 	DrawMenu();
 
@@ -128,18 +151,102 @@ int main()
 		}
 	}
 
+	// 게임 시작 화면 
 	gotoxy(15, 10);
 	printf("TO START");
 	gotoxy(15, 11);
 	printf("PRESS ANY KEY");
 	system("pause>>nul");
 
+	gotoxy(15, 10);
+	printf("                ");
+	gotoxy(15, 11);
+	printf("                      ");
+
+
+
+
 	while (life > 0)
 	{
+		// score & life  
 		gotoxy(45, 4);
 		printf("Score: %d", score);
 		gotoxy(45, 5);
 		printf("Life: %d", life);
-	}
 
+		// 비 생성
+		if ((count % 10) == 1)
+		{
+			for (int i = 0; i <= MAX_RAIN; i++)
+			{
+				if (RAIN[i].exist == FALSE)
+				{
+					RAIN[i].exist = TRUE;
+					RAIN[i].x = rand() % 37 + 3;
+					RAIN[i].y = 1;
+					break;
+				}
+			}
+		}
+		
+		// 비의 이동
+		if (count % SPEED == 1)
+		{
+			for (i = 0; i < MAX_RAIN; i++)
+			{
+				if (RAIN[i].exist == TRUE)
+				{
+					gotoxy(RAIN[i].x, RAIN[i].y);
+					printf(" ");
+
+					if (RAIN[i].y >= 23)
+					{
+						RAIN[i].exist = FALSE;
+						score += 10;
+						continue;
+					}
+
+					RAIN[i].y++;
+					gotoxy(RAIN[i].x, RAIN[i].y);
+					printf("|");
+				}
+			}
+		}
+
+		// 플레이어 이동
+		if ((count % 5) == 1)
+		{
+			if (IsKeyDown(VK_LEFT))
+			{
+				if (px >= 3)
+				{
+					gotoxy(px, 23);
+					putchar(' ');
+					px--;
+				}
+			}
+			else if (IsKeyDown(VK_RIGHT))
+			{
+				if (px < 39)
+				{
+					gotoxy(px, 23);
+					putchar(' ');
+					px++;
+				}
+
+			}
+		}
+		gotoxy(px, 23);
+		printf("♀");
+
+		if ((RAIN[i].x == px) && (RAIN[i].y == 23))
+		{
+			life--;
+			RAIN[i].exist = FALSE;
+		}
+
+		count++;
+		Sleep(10);
+	}
+		
 }
