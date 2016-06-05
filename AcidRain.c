@@ -16,10 +16,17 @@
 #define DOWN 80
 #define ENTER 13	
 
-struct {
+#define WIDTH 20
+#define HEIGHT 23
+
+
+typedef struct object{
 	int x, y;
-	BOOL exist;
-}RAIN[MAX_RAIN] = {0,};
+	int exist;
+} Object;
+
+Object rain[MAX_RAIN];
+Object player;
 
 int y = 10;
 // 화살표의 위치 저장 
@@ -112,34 +119,135 @@ BOOL IsMenuSel()
 // 게임 판
 void DrawBoard()
 {
+
 	int i;
-	for (i = 0; i <= 40; i++)
+
+	// 가로
+	for (i = 0; i < WIDTH; i++)
+		printf("▧");
+	gotoxy(0, HEIGHT);
+	for (i = 0; i < WIDTH+1; i++)
+		printf("▧");
+
+	// 세로
+	for (i = 0; i < HEIGHT; i++)
 	{
-		gotoxy(i + 1, 0);
-		printf("-");
-		gotoxy(i + 1, 24);
-		printf("-");
+		gotoxy(0, i);
+		printf("▧");
 	}
-	for (i = 0; i <= 22; i++)
+	for (i = 0; i < HEIGHT; i++)
 	{
-		gotoxy(1, i + 1);
-		printf("|");
-		gotoxy(41, i + 1);
-		printf("|");
+		gotoxy(WIDTH*2, i);
+		printf("▧");
 	}
+
 }
+
+// 초기화
+void Init()
+{
+	int i;
+
+	for (i = 0; i < MAX_RAIN; i++)
+		rain[i].exist = FALSE;
+
+	player.x = WIDTH;
+}
+
+void MovePlayer()
+{
+	// 플레이어 이동
+	if (IsKeyDown(VK_LEFT))
+	{
+		if (player.x >= 3)
+		{
+			gotoxy(player.x, 22);
+			putchar(' ');
+			player.x--;
+		}
+	}
+	else if (IsKeyDown(VK_RIGHT))
+	{
+		if (player.x < 38)
+		{
+			gotoxy(player.x, 22);
+			putchar(' ');
+			player.x++;
+		}
+
+	}
+	gotoxy(player.x, 22);
+	printf("♀");
+}
+
+void CreateRain()
+{
+	// 비 생성
+	for (int i = 0; i <= MAX_RAIN; i++)
+	{
+		if (rain[i].exist == FALSE)
+		{
+			rain[i].exist = TRUE;
+
+			rain[i].x = rand() % 37 + 2;
+			rain[i].y = 1;
+
+			return;
+		}
+	}
+
+}
+
+int MoveRain()
+{
+	// 비의 이동
+	int i;
+	int score = 0;
+	int life = 3;
+
+	for (i = 0; i < MAX_RAIN; i++)
+	{
+		if (rain[i].exist == TRUE)
+		{
+			gotoxy(rain[i].x, rain[i].y);
+			printf(" ");
+
+			if (rain[i].y == HEIGHT-1)
+			{
+				rain[i].exist = FALSE;
+				score += 10;
+				continue;
+
+				if (rain[i].x && player.x)
+				{
+					life--;
+				}
+			}
+			rain[i].y++;
+			gotoxy(rain[i].x, rain[i].y);
+			printf("|");
+		}
+
+		// score & life  
+		gotoxy(45, 4);
+		printf("Score: %d", score);
+		gotoxy(45, 5);
+		printf("Life: %d", life);
+	}
+
+}
+
 
 int main()
 {
 
 	srand((int)time(NULL));
 	int key;
+	int i = 0;
 	int score = 0;
 	int life = 3;
-	int px = 10;
-	int count = 0;
-	int i = 0;
 
+	Init();
 	DrawMenu();
 
 	while (menu == 0)
@@ -152,6 +260,7 @@ int main()
 	}
 
 	// 게임 시작 화면 
+
 	gotoxy(15, 10);
 	printf("TO START");
 	gotoxy(15, 11);
@@ -166,87 +275,14 @@ int main()
 
 
 
-	while (life > 0)
+	while(1)
 	{
-		// score & life  
-		gotoxy(45, 4);
-		printf("Score: %d", score);
-		gotoxy(45, 5);
-		printf("Life: %d", life);
 
-		// 비 생성
-		if ((count % 10) == 1)
-		{
-			for (int i = 0; i <= MAX_RAIN; i++)
-			{
-				if (RAIN[i].exist == FALSE)
-				{
-					RAIN[i].exist = TRUE;
-					RAIN[i].x = rand() % 37 + 3;
-					RAIN[i].y = 1;
-					break;
-				}
-			}
-		}
-		
-		// 비의 이동
-		if (count % SPEED == 1)
-		{
-			for (i = 0; i < MAX_RAIN; i++)
-			{
-				if (RAIN[i].exist == TRUE)
-				{
-					gotoxy(RAIN[i].x, RAIN[i].y);
-					printf(" ");
-
-					if (RAIN[i].y >= 23)
-					{
-						RAIN[i].exist = FALSE;
-						score += 10;
-						continue;
-					}
-
-					RAIN[i].y++;
-					gotoxy(RAIN[i].x, RAIN[i].y);
-					printf("|");
-				}
-			}
-		}
-
-		// 플레이어 이동
-		if ((count % 5) == 1)
-		{
-			if (IsKeyDown(VK_LEFT))
-			{
-				if (px >= 3)
-				{
-					gotoxy(px, 23);
-					putchar(' ');
-					px--;
-				}
-			}
-			else if (IsKeyDown(VK_RIGHT))
-			{
-				if (px < 39)
-				{
-					gotoxy(px, 23);
-					putchar(' ');
-					px++;
-				}
-
-			}
-		}
-		gotoxy(px, 23);
-		printf("♀");
-
-		if ((RAIN[i].x == px) && (RAIN[i].y == 23))
-		{
-			life--;
-			RAIN[i].exist = FALSE;
-		}
-
-		count++;
-		Sleep(10);
-	}
+		MovePlayer();
+		CreateRain();
+		MoveRain();
+	
+		Sleep(50);
+	} 
 		
 }
